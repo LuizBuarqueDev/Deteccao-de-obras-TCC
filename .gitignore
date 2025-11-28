@@ -1,3 +1,14 @@
 output/
 dataset/
 venv/
+dataset-split
+dataset-roboflow
+/Met/MET
+train
+valid
+Slipt
+trainval_3120
+treino_art
+_temp_aug
+dataset-original
+datasetAug

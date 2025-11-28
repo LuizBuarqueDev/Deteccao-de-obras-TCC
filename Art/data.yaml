@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 5
+names: ['Madonna of Loreto', 'Sistine Madonna', 'The Birth of Venus', 'Venus and Mars', 'the last supper']
+
+roboflow:
+  workspace: ex-79cke
+  project: art-crhia-rh4rp
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/ex-79cke/art-crhia-rh4rp/dataset/1
