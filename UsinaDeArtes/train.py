@@ -3,7 +3,6 @@ import torch
 import os
 
 def run_training():
-
     DATA_DIR = "dataset"
 
     PROJECT_DIR = os.path.dirname(__file__)
@@ -16,31 +15,31 @@ def run_training():
     PATIENCE = 20
 
     DEVICE = 0 if torch.cuda.is_available() else "cpu"
-    print(f" Treinando no dispositivo: {DEVICE}")
+    print(f"Treinando no dispositivo: {DEVICE}")
 
     model = YOLO(MODEL)
 
     print("\n Iniciando treinamento YOLOv11 CLASSIFIER...\n")
 
     model.train(
-        data=DATA_DIR,
+        data=DATA_DIR,  
         epochs=EPOCHS,
-        
         imgsz=IMG_SIZE,
         batch=BATCH,
         device=DEVICE,
         patience=PATIENCE,
         workers=16,
         amp=True,
-        dropout=0,    
+        dropout=0,      
         verbose=True,
+        plots=True,
 
         project= PROJECT_DIR,
         name="runs"
     )
 
     print("\n Treinamento finalizado!")
-    print("Melhor modelo: runs/classify/train*/weights/best.pt")
+    print(" Melhor modelo: runs/classify/train*/weights/best.pt")
 
 
 if __name__ == "__main__":

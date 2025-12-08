@@ -5,16 +5,12 @@ from glob import glob
 from tqdm import tqdm
 import random
 
-# ------------------------------
 # CONFIGURAÇÕES
-# ------------------------------
 INPUT_DIR = "dataset/train"
 TARGET = 30
 IMG_SIZE = 384
 
-# ------------------------------
 # PIPELINE DE AUGMENTATION (CORRIGIDO)
-# ------------------------------
 augment = A.Compose([
     A.HorizontalFlip(p=0.5),
     A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.5),
@@ -43,9 +39,9 @@ def augment_class(class_name):
 
     current = len(originals)
 
-    # ⚠️ Se a classe não tem imagens, pular
+    # Se a classe não tem imagens, pular
     if current == 0:
-        print(f"⚠️ Classe vazia, ignorando: {class_name}")
+        print(f"Classe vazia, ignorando: {class_name}")
         return
 
     # Se já tiver imagens suficientes, apenas reporta
@@ -62,7 +58,7 @@ def augment_class(class_name):
         img = cv2.imread(base_img)
 
         if img is None:
-            print(f"❌ Erro ao ler imagem: {base_img}")
+            print(f" Erro ao ler imagem: {base_img}")
             continue
 
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -89,13 +85,13 @@ def augment_class(class_name):
         idx += 1
 
 def main():
-    print("🚀 AUGMENTAÇÃO DIRETA NA PASTA TRAIN\n")
+    print("AUGMENTAÇÃO DIRETA NA PASTA TRAIN\n")
     classes = sorted(os.listdir(INPUT_DIR))
 
     for c in classes:
         augment_class(c)
 
-    print("\n🎉 AUGMENTAÇÃO FINALIZADA!")
+    print("\nAUGMENTAÇÃO FINALIZADA!")
 
 if __name__ == "__main__":
     main()

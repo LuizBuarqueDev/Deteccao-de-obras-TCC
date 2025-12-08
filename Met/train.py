@@ -15,7 +15,7 @@ def run_training():
     PATIENCE = 20
 
     DEVICE = 0 if torch.cuda.is_available() else "cpu"
-    print(f"🔥 Treinando no dispositivo: {DEVICE}")
+    print(f" Treinando no dispositivo: {DEVICE}")
 
     model = YOLO(MODEL)
 

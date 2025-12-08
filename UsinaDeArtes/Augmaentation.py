@@ -1,30 +1,16 @@
 import os
 import cv2
 import albumentations as A
-from multiprocessing import Pool, cpu_count
 from glob import glob
 from tqdm import tqdm
-import shutil
 import random
 
-# ------------------------------
 # CONFIGURAÇÕES
-# ------------------------------
-INPUT_DIR = "dataset-original"     # originais
-TEMP_DIR = "_temp_aug"             # onde ficará tudo antes do split
-OUTPUT_DIR = "dataset"             # dataset final
-
+INPUT_DIR = "dataset/train"
 TARGET = 30
 IMG_SIZE = 384
 
-TRAIN_SPLIT = 0.70
-VAL_SPLIT = 0.20
-TEST_SPLIT = 0.10
-
-
-# ------------------------------
-# PIPELINE DE AUGMENTATION
-# ------------------------------
+# PIPELINE DE AUGMENTATION (CORRIGIDO)
 augment = A.Compose([
     A.HorizontalFlip(p=0.5),
     A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.1, p=0.5),
@@ -41,109 +27,71 @@ augment = A.Compose([
 ])
 
 
-def ensure_dir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-
 def augment_class(class_name):
-    """
-    Copia originais → TEMP
-    Gera augmentations até TOTAL = TARGET
-    (Split ainda não acontece aqui)
-    """
-    class_in = os.path.join(INPUT_DIR, class_name)
-    class_temp = os.path.join(TEMP_DIR, class_name)
-    ensure_dir(class_temp)
+    class_path = os.path.join(INPUT_DIR, class_name)
 
-    originals = glob(class_in + "/*.jpg") + glob(class_in + "/*.png") + glob(class_in + "/*.jpeg")
+    originals = (
+        glob(class_path + "/*.jpg") +
+        glob(class_path + "/*.jpeg") +
+        glob(class_path + "/*.png")
+    )
     originals = sorted(originals)
-
-    # Copia todas as originais
-    for img_path in originals:
-        shutil.copy2(img_path, os.path.join(class_temp, os.path.basename(img_path)))
 
     current = len(originals)
 
-    if current < TARGET:
-        need = TARGET - current
-        print(f"[AUG] Classe {class_name}: gerando {need} images...")
+    #Se a classe não tem imagens, pular
+    if current == 0:
+        print(f"Classe vazia, ignorando: {class_name}")
+        return
 
-        idx = current
-        for i in tqdm(range(need), desc=class_name):
-            base_img = originals[i % current]
-            img = cv2.imread(base_img)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    # Se já tiver imagens suficientes, apenas reporta
+    if current >= TARGET:
+        print(f"{class_name}: OK ({current})")
+        return
 
-            aug = augment(image=img)["image"]
-            aug = cv2.cvtColor(aug, cv2.COLOR_RGB2BGR)
+    need = TARGET - current
+    print(f"[AUG] Classe {class_name}: gerando {need} imagens...")
 
-            out_path = os.path.join(class_temp, f"aug_{idx}.jpg")
-            cv2.imwrite(out_path, aug)
-            idx += 1
+    idx = current
+    for i in tqdm(range(need), desc=class_name):
+        base_img = originals[i % current]
+        img = cv2.imread(base_img)
 
-    return f"{class_name}: total={TARGET}"
+        if img is None:
+            print(f"Erro ao ler imagem: {base_img}")
+            continue
+
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        aug = augment(image=img)["image"]
+        aug = cv2.cvtColor(aug, cv2.COLOR_RGB2BGR)
+
+        out_path = os.path.join(class_path, f"aug_{idx}.jpg")
+        cv2.imwrite(out_path, aug)
+        idx += 1
 
 
-def split_dataset():
-    print("\n📌 Realizando divisão train/val/test...")
+    idx = current
+    for i in tqdm(range(need), desc=class_name):
+        base_img = originals[i % current]
+        img = cv2.imread(base_img)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-    classes = sorted(os.listdir(TEMP_DIR))
+        aug = augment(image=img)["image"]
+        aug = cv2.cvtColor(aug, cv2.COLOR_RGB2BGR)
 
-    for class_name in classes:
-        class_temp = os.path.join(TEMP_DIR, class_name)
+        out_path = os.path.join(class_path, f"aug_{idx}.jpg")
+        cv2.imwrite(out_path, aug)
 
-        images = (
-            glob(class_temp + "/*.jpg") +
-            glob(class_temp + "/*.png") +
-            glob(class_temp + "/*.jpeg")
-        )
-        random.shuffle(images)
-
-        n = len(images)
-        n_train = int(n * TRAIN_SPLIT)
-        n_val = int(n * VAL_SPLIT)
-        n_test = n - n_train - n_val
-
-        splits = {
-            "train": images[:n_train],
-            "val": images[n_train:n_train+n_val],
-            "test": images[n_train+n_val:]
-        }
-
-        for split_name, imgs in splits.items():
-            out_dir = os.path.join(OUTPUT_DIR, split_name, class_name)
-            ensure_dir(out_dir)
-
-            for img_path in imgs:
-                shutil.copy2(img_path, os.path.join(out_dir, os.path.basename(img_path)))
-
-        print(f"✔ {class_name}: train={n_train}, val={n_val}, test={n_test}")
-
+        idx += 1
 
 def main():
-
-    print("🚀 AUGMENTAÇÃO → SPLIT")
-
-    ensure_dir(TEMP_DIR)
-    ensure_dir(OUTPUT_DIR)
-
+    print("AUGMENTAÇÃO DIRETA NA PASTA TRAIN\n")
     classes = sorted(os.listdir(INPUT_DIR))
-    workers = min(20, cpu_count())
 
-    # 1) AUGMENTAÇÃO COMPLETA
-    print("\n🔧 Gerando aumentações...")
-    with Pool(workers) as pool:
-        results = pool.map(augment_class, classes)
-    for r in results:
-        print(r)
+    for c in classes:
+        augment_class(c)
 
-    # 2) SPLIT
-    split_dataset()
-
-    print("\n🎉 FINALIZADO COM SUCESSO!")
-    print(f"📁 Dataset final em: {OUTPUT_DIR}/train, val, test")
-
+    print("\nAUGMENTAÇÃO FINALIZADA!")
 
 if __name__ == "__main__":
     main()
