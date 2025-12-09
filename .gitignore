@@ -14,3 +14,5 @@ dataset-original
 datasetAug
 weights
 /UsinaDeArtes/dataset-original - Copia
+yolo11n.pt
+yolo11m-cls.pt
